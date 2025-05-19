@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Services</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1><a href="home.html" class="logo">LapBoost</a></h1>
+    <nav>
+      <ul>
+        <li><a href="orders.html">Orders</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="sell.html">Sell</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+    <div id="welcome" style="text-align: center; color: white; font-weight: bold; padding-top: 10px;"></div>
+    <div style="text-align: center;">
+      <button onclick="logout()" style="padding: 5px 10px;">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>Our Services</h2>
+    <ul id="servicesList"></ul>
+  </main>
+
+  <script>
+    const services = [
+      "Hardware installation & replacements (SSDs, RAM, battery, screen, etc.)",
+      "Windows installation",
+      "Data recovery & backup",
+      "Additional technical support and optimization services"
+    ];
+
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username) {
+          window.location.href = 'auth.html';
+        } else {
+          document.getElementById('welcome').innerText = `Welcome, ${data.username}!`;
+          const ul = document.getElementById("servicesList");
+          ul.innerHTML = services.map(s => `
+            <li style="margin-bottom: 10px;">
+              ${s}<br>
+              <button onclick="requestService(decodeURIComponent('${encodeURIComponent(s)}'))">Request</button>
+            </li>
+          `).join('');
+        }
+      });
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = 'auth.html');
+    }
+
+    function requestService(serviceName) {
+      fetch('/api/service/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: serviceName })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) alert("Service request submitted!");
+          else alert(data.error || "Failed to submit request.");
+        });
+    }
+  </script>
+</body>
+</html>

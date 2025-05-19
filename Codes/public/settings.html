@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Profile</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1><a href="home.html" class="logo">LapBoost</a></h1>
+    <nav>
+      <ul>
+        <li><a href="orders.html">Orders</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="sell.html">Sell Products</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+    <div id="welcome" style="text-align: center; color: white; font-weight: bold; padding-top: 10px;"></div>
+    <div style="text-align: center;">
+      <button onclick="logout()" style="padding: 5px 10px;">Logout</button>
+    </div>
+  </header>
+
+  <main style="text-align: center;">
+    <h2>User Profile</h2>
+    <div id="profileInfo" style="margin-top: 20px;"></div>
+
+    <h3>Update Username</h3>
+    <form onsubmit="updateUsername(event)">
+      <input type="text" id="newUsername" placeholder="New Username" required>
+      <button type="submit">Update Username</button>
+    </form>
+  </main>
+
+  <script>
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username) {
+          window.location.href = 'auth.html';
+        } else {
+          document.getElementById('welcome').innerText = `Welcome, ${data.username}!`;
+          document.getElementById('profileInfo').innerHTML = `
+            <p><strong>Username:</strong> ${data.username}</p>
+            <p><strong>Role:</strong> ${data.role}</p>
+            <p><strong>Total Orders:</strong> ${data.totalOrders}</p>
+            <p><strong>Completed Orders:</strong> ${data.completedOrders}</p>
+            <p><strong>Pending Orders:</strong> ${data.currentOrders}</p>
+          `;
+        }
+      });
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = 'auth.html');
+    }
+
+    function updateUsername(e) {
+      e.preventDefault();
+      const newUsername = document.getElementById('newUsername').value.trim();
+      if (!newUsername) return alert("Username cannot be empty.");
+
+      fetch('/api/profile/username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newUsername })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Username updated. Please log in again.");
+            window.location.href = 'auth.html';
+          } else {
+            alert(data.error || "Update failed.");
+          }
+        });
+    }
+  </script>
+</body>
+</html>
