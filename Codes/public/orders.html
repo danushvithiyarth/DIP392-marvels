@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Orders</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1><a href="home.html" class="logo">LapBoost</a></h1>
+    <nav>
+      <ul>
+        <li><a href="orders.html">Orders</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="sell.html">Sell Products</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+    <div id="welcome" style="text-align: center; color: white; font-weight: bold; padding-top: 10px;"></div>
+    <div style="text-align: center;">
+      <button onclick="logout()" style="padding: 5px 10px;">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>Your Orders</h2>
+    <button onclick="loadOrders('current')">Current Orders</button>
+    <button onclick="loadOrders('past')">Past Orders</button>
+    <ul id="orderList"></ul>
+  </main>
+
+  <script>
+    let sessionUser = null;
+
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username) {
+          window.location.href = 'auth.html';
+        } else {
+          sessionUser = data;
+          document.getElementById('welcome').innerText = `Welcome, ${data.username}!`;
+          loadOrders('current');
+        }
+      });
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = 'auth.html');
+    }
+
+    function loadOrders(type) {
+      fetch(`/api/orders/${type}`)
+        .then(res => res.json())
+        .then(orders => {
+          const ul = document.getElementById('orderList');
+          ul.innerHTML = orders.length
+            ? orders.map(o => `
+              <li>
+                <strong>${o.product_name}</strong> 
+                (${o.status}) 
+                <br><small>${new Date(o.created_at).toLocaleString()}</small>
+                ${type === 'current' ? `<br><button onclick="markComplete(${o.id})">Mark as Completed</button>` : ''}
+              </li>
+            `).join('')
+            : `<li>No ${type} orders found.</li>`;
+        });
+    }
+
+    function markComplete(orderId) {
+      fetch(`/api/orders/complete/${orderId}`, { method: 'POST' })
+        .then(() => loadOrders('current'));
+    }
+  </script>
+</body>
+</html>
