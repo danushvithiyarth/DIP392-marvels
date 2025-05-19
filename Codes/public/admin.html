@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Admin Panel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>LapBoost - Admin Panel</h1>
+    <nav>
+      <ul>
+        <li><a href="home.html">Home</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Admin Dashboard</h2>
+    <div id="stats"></div>
+
+    <h2>Manage Products</h2>
+    <form onsubmit="addProduct(event)">
+      <input type="text" id="productName" placeholder="Product Name" required>
+      <input type="number" id="productPrice" placeholder="Price" required>
+      <button type="submit">Add Product</button>
+    </form>
+
+    <h3>Current Products</h3>
+    <div id="products"></div>
+
+    <h2>Manage Orders</h2>
+    <div id="allOrders"></div>
+
+    <h2>Service Requests</h2>
+    <div id="serviceRequests"></div>
+  </main>
+
+  <script>
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username || data.role !== 'admin') {
+          alert("Access Denied!");
+          window.location.href = 'home.html';
+        } else {
+          loadStats();
+          loadProducts();
+          loadOrders();
+          loadServiceRequests();
+        }
+      });
+
+    function loadStats() {
+      fetch('/api/admin/stats')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('stats').innerHTML = `
+            <p><strong>Total Users:</strong> ${data.users}</p>
+            <p><strong>Total Products:</strong> ${data.products}</p>
+            <p><strong>Total Orders:</strong> ${data.orders}</p>
+          `;
+        });
+    }
+
+    function loadProducts() {
+      fetch('/api/products')
+        .then(res => res.json())
+        .then(products => {
+          const container = document.getElementById('products');
+          container.innerHTML = products.map(p => `
+            <div>
+              <strong>${p.name}</strong> - $${p.price}
+              <button onclick="deleteProduct(${p.id})">Delete</button>
+            </div>
+          `).join('');
+        });
+    }
+
+    function addProduct(e) {
+      e.preventDefault();
+      const name = document.getElementById('productName').value.trim();
+      const price = document.getElementById('productPrice').value.trim();
+      if (!name || !price) return;
+
+      fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, price })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            loadProducts();
+          }
+        });
+    }
+
+    function deleteProduct(id) {
+      if (confirm('Delete this product?')) {
+        fetch(`/api/products/${id}`, {
+          method: 'DELETE'
+        }).then(() => loadProducts());
+      }
+    }
+
+    function loadOrders() {
+      fetch('/api/admin/orders')
+        .then(res => res.json())
+        .then(orders => {
+          const div = document.getElementById('allOrders');
+          div.innerHTML = orders.map(o => `
+            <div>
+              <strong>${o.product_name}</strong> (${o.status})<br>
+              <small>By: ${o.username} | ${new Date(o.created_at).toLocaleString()}</small>
+              ${o.status === 'current' ? `<br><button onclick="adminComplete(${o.id})">Mark Complete</button>` : ''}
+              <hr>
+            </div>
+          `).join('');
+        });
+    }
+
+    function adminComplete(orderId) {
+      fetch(`/api/admin/orders/complete/${orderId}`, { method: 'POST' })
+        .then(() => loadOrders());
+    }
+
+    function loadServiceRequests() {
+      fetch('/api/admin/service-requests')
+        .then(res => res.json())
+        .then(requests => {
+          const container = document.getElementById('serviceRequests');
+          container.innerHTML = requests.length
+            ? requests.map(r => `
+              <div style="margin-bottom: 10px;">
+                <strong>${r.name}</strong><br>
+                <small>By: ${r.username} | Status: ${r.status}</small><br>
+                ${r.status === 'pending' ? `
+                  <button onclick="acceptRequest(${r.id})">Accept</button>
+                  <button onclick="rejectRequest(${r.id})">Reject</button>
+                ` : ''}
+              </div>
+            `).join('')
+            : `<p>No service requests found.</p>`;
+        });
+    }
+
+    function acceptRequest(id) {
+      fetch(`/api/admin/service-requests/${id}/accept`, { method: 'POST' })
+        .then(() => loadServiceRequests());
+    }
+
+    function rejectRequest(id) {
+      fetch(`/api/admin/service-requests/${id}/reject`, { method: 'POST' })
+        .then(() => loadServiceRequests());
+    }
+  </script>
+</body>
+</html>

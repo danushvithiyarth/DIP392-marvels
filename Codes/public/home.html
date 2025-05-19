@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Home</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>LapBoost</h1>
+    <nav>
+      <ul id="navLinks">
+        <li><a href="orders.html">Orders</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="sell.html">Sell Products</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="settings.html">Settings</a></li>
+        
+      </ul>
+    </nav>
+    <div id="welcome" style="text-align: center; color: #fff; font-weight: bold; padding-top: 10px;"></div>
+    <div style="text-align: center;">
+      <button onclick="logout()" style="padding: 5px 10px;">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>Home</h2>
+    <button onclick="location.href='services.html'">Request a Service</button>
+
+    <section style="margin-top: 30px;">
+      <h3>My Devices</h3>
+      <ul id="myDevices"></ul>
+
+      <form onsubmit="registerDevice(event)" style="margin-top: 15px;">
+        <input type="text" id="deviceName" placeholder="Enter device name" required>
+        <button type="submit">Add Device</button>
+      </form>
+    </section>
+
+    <section style="margin-top: 40px;">
+      <h3>About</h3>
+      <p>
+        LapBoost is a company that provides comprehensive laptop services, including repair, 
+        upgrades, support, personalization, and buying and selling of laptops. We focus on offering quick,  
+        convenient, and on-campus support, particularly catering to students' needs.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username) {
+          window.location.href = 'auth.html';
+        } else {
+          let welcomeMessage = `Welcome, ${data.username}`;
+          if (data.role === 'admin') {
+            welcomeMessage += ' (Admin)';
+            const nav = document.getElementById('navLinks');
+            const adminLink = document.createElement('li');
+            adminLink.innerHTML = `<a href="admin.html">Admin Panel</a>`;
+            nav.appendChild(adminLink);
+          }
+          document.getElementById('welcome').innerText = welcomeMessage;
+          loadDevices();
+        }
+      });
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = 'auth.html');
+    }
+
+    function loadDevices() {
+      fetch('/api/devices')
+        .then(res => res.json())
+        .then(devices => {
+          const ul = document.getElementById('myDevices');
+          ul.innerHTML = devices.length
+            ? devices.map(d => `<li>${d.name} <button onclick="deleteDevice(${d.id})">🗑</button></li>`).join('')
+            : `<li>No devices registered yet.</li>`;
+        });
+    }
+
+    function registerDevice(e) {
+      e.preventDefault();
+      const name = document.getElementById('deviceName').value.trim();
+      if (!name) return;
+      fetch('/api/devices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('deviceName').value = '';
+            loadDevices();
+          }
+        });
+    }
+
+    function deleteDevice(id) {
+      if (confirm("Delete this device?")) {
+        fetch(`/api/devices/${id}`, {
+          method: 'DELETE'
+        }).then(() => loadDevices());
+      }
+    }
+  </script>
+</body>
+</html>
