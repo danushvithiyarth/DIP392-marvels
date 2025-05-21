@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LapBoost | Marketplace</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1><a href="home.html" class="logo">LapBoost</a></h1>
+    <nav>
+      <ul>
+        <li><a href="orders.html">Orders</a></li>
+        <li><a href="marketplace.html">Marketplace</a></li>
+        <li><a href="sell.html">Sell</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
+    <div id="welcome" style="text-align: center; color: white; font-weight: bold; padding-top: 10px;"></div>
+    <div style="text-align: center;">
+      <button onclick="logout()" style="padding: 5px 10px;">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>Marketplace</h2>
+
+    <section>
+      <h3>Official Products</h3>
+      <div id="products"></div>
+    </section>
+
+    <section style="margin-top: 40px;">
+      <h3>User Selling Products</h3>
+      <div id="userProducts"></div>
+    </section>
+  </main>
+
+  <script>
+    let currentUser = null;
+
+    fetch('/api/session')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.username) {
+          window.location.href = 'auth.html';
+        } else {
+          currentUser = data.username;
+          document.getElementById('welcome').innerText = `Welcome, ${currentUser}!`;
+        }
+      });
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = 'auth.html');
+    }
+
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(items => {
+        const div = document.getElementById("products");
+        div.innerHTML = items.length
+          ? items.map(i => `<div><strong>${i.name}</strong> - $${i.price}</div>`).join('')
+          : `<p>No official products found.</p>`;
+      });
+
+    fetch('/api/sell/all')
+      .then(res => res.json())
+      .then(items => {
+        const div = document.getElementById("userProducts");
+        div.innerHTML = items.length
+          ? items.map(i => `
+              <div style="margin-bottom: 10px;">
+                <strong>${i.name}</strong> - $${i.price}<br>
+                <small>${i.description}</small><br>
+                <small>By: ${i.username}</small><br>
+                ${i.username !== currentUser ? `<button onclick="buyUsed(${i.id})">Buy</button>` : ''}
+              </div>
+            `).join('')
+          : `<p>No user listings yet.</p>`;
+      });
+
+    function buyUsed(id) {
+      if (!confirm("Are you sure you want to buy this item?")) return;
+      fetch(`/api/sell/buy/${id}`, {
+        method: 'POST'
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Purchase successful!");
+            window.location.reload();
+          } else {
+            alert(data.error || "Failed to buy.");
+          }
+        });
+    }
+  </script>
+</body>
+</html>
