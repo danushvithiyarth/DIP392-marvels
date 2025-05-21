@@ -10,9 +10,13 @@ while improving operational efficiency
 Team Roles:
 
 Danush Vithiyarth Jaiganesh – 221ADB150 – Deployment process
+
 Harikumaran Anandhan – 221ADB148 – Backend Development
+
 Meganath Nandhakumar – 221ADB061 – Frontend Development and Report Management
+
 Ahmed Salah Kamal Abdelgawad Elsayed – 250ADB021 – Communication with the customer and Requirements Management
+
 Alexander Fernando Thundiparambil Judy Thadevouse – 221AMB023 – Database Management.
 
 Setup Instruction:
