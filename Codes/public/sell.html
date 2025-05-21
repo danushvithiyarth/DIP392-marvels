@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>LapBoost | Sell Your Device</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
@@ -27,9 +27,9 @@
   <main>
     <h2>Sell Your Device</h2>
     <form onsubmit="submitListing(event)" style="margin-bottom: 30px;">
-      <input type="text" id="itemName" placeholder="Device Name" required>
+      <input type="text" id="itemName" placeholder="Device Name" required />
       <textarea id="itemDescription" placeholder="Details" required></textarea>
-      <input type="number" id="itemPrice" placeholder="Price" required>
+      <input type="number" id="itemPrice" placeholder="Price" required />
       <button type="submit">List for Sale</button>
     </form>
 
@@ -50,8 +50,7 @@
       });
 
     function logout() {
-      fetch('/api/logout', { method: 'POST' })
-        .then(() => window.location.href = 'auth.html');
+      fetch('/api/logout', { method: 'POST' }).then(() => (window.location.href = 'auth.html'));
     }
 
     function submitListing(e) {
@@ -60,33 +59,38 @@
       const description = document.getElementById('itemDescription').value.trim();
       const price = parseFloat(document.getElementById('itemPrice').value.trim());
 
-      if (!name || !description || isNaN(price)) return alert("All fields are required.");
+      if (!name || !description || isNaN(price)) return alert('All fields are required.');
 
       fetch('/api/sell', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, price })
+        body: JSON.stringify({ name, description, price }),
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          document.getElementById('itemName').value = '';
-          document.getElementById('itemDescription').value = '';
-          document.getElementById('itemPrice').value = '';
-          loadListings();
-        } else {
-          alert("Failed to list item.");
-        }
-      });
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemDescription').value = '';
+            document.getElementById('itemPrice').value = '';
+            loadListings();
+          } else {
+            alert('Failed to list item.');
+          }
+        });
     }
 
     function loadListings() {
-      fetch('/api/sell/my')
+      fetch('/api/sell')  // Corrected URL here
         .then(res => res.json())
         .then(items => {
           const ul = document.getElementById('myListings');
           ul.innerHTML = items.length
-            ? items.map(i => `<li><strong>${i.name}</strong> - $${i.price}<br>${i.description}</li>`).join('')
+            ? items
+                .map(
+                  i =>
+                    `<li><strong>${i.name}</strong> - $${i.price}<br>${i.description}</li>`
+                )
+                .join('')
             : '<li>You have not listed anything yet.</li>';
         });
     }

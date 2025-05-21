@@ -311,6 +311,42 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
+// NEW SELL ITEM ROUTE
+app.post('/api/sell', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Not logged in' });
+
+  const { name, description, price } = req.body;
+  if (!name || !price) return res.status(400).json({ error: 'Name and price are required' });
+
+  db.run(`INSERT INTO sell_items (user_id, name, description, price) VALUES (?, ?, ?, ?)`,
+    [req.session.userId, name, description || '', price],
+    function (err) {
+      if (err) return res.status(500).json({ error: 'Failed to add sell item' });
+      res.json({ success: true, id: this.lastID });
+    });
+});
+
+// Optional: get current user's sell items
+app.get('/api/sell', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Not logged in' });
+
+  db.all(`SELECT * FROM sell_items WHERE user_id = ?`, [req.session.userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Failed to load sell items' });
+    res.json(rows);
+  });
+});
+
+app.get('/api/sell/all', (req, res) => {
+  db.all(`
+    SELECT sell_items.*, users.username 
+    FROM sell_items 
+    JOIN users ON sell_items.user_id = users.id
+  `, (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch listings' });
+    res.json(rows);
+  });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'auth.html'));
 });
